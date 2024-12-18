@@ -7,20 +7,13 @@
 #include <sys/shm.h>
 #include <stdio.h>
 
+struct sharedmem {
 
-
-struct circularbuff{
   sem_t *buffer;
   size_t head;
   size_t tail;
-  size_t capacity;// capacity here is basically capacity
-  sem_t mutex;
+  size_t capacity;
   bool full;
-}; 
-
-struct sharedmem {
-
-  struct circularbuff buffer;
 
   int NumOfWaters;
   int NumOfCheeses;
@@ -31,114 +24,28 @@ struct sharedmem {
   int AvgWaitingTime;
 };
 
-void circularBuffInit(CircularBuff buffer, size_t capacity) {
-  buffer->buffer = (sem_t*)((char*)buffer + sizeof(struct circularbuff));
-  for(size_t i = 0; i < capacity; i++) {
-    if(sem_init(&buffer->buffer[i], 1, 0));
-  }
-  sem_init(&buffer->mutex, 1, 1);
-  buffer->capacity = capacity;
-  circularBuffReset(buffer);
-  assert(circularBuffEmpty(buffer));
-}
-
-void circularBuffReset(CircularBuff circBuff) {
-  assert(circBuff);
-  circBuff->head = 0;
-  circBuff->tail = 0;
-  circBuff->full = false;
-}
-
-void circularBuffDestroy(CircularBuff circBuff) {
-  assert(circBuff);
-  assert(circBuff->buffer);
-  for(size_t i = 0; i < circBuff->capacity; i++) sem_destroy(&circBuff->buffer[i]);
-  sem_destroy(&circBuff->mutex); 
-}
-
-int circularBuffCapacity(CircularBuff circBuff) {
-  assert(circBuff);
-  size_t capacity = circBuff->capacity;
-  return capacity;
-}
-
-size_t circularBuffSize(CircularBuff circBuff) {
-  assert(circBuff);
-  size_t size;
-  if(circBuff->head >= circBuff->tail) {
-    size = circBuff->head - circBuff->tail;
-  } else {
-    size = circBuff->capacity + circBuff->head - circBuff->tail;
-  }
-  if(circBuff->full) size = circBuff->capacity;
-  return size;
-}
-
-
-bool circularBuffFull(CircularBuff circBuff) {
-  assert(circBuff);
-  return circBuff->full;
-}
-
-bool circularBuffEmpty(CircularBuff circBuff) {
-  assert(circBuff);
-  return (!circBuff->full &&(circBuff->tail == circBuff->head));
-}
-
-static void advanceHead(CircularBuff circBuff) {
-  assert(circBuff);
-  if (circBuff->full) {
-    if(++circBuff->tail == circBuff->capacity) {
-      circBuff->tail = 0;
-    }
-  }
-  if (++circBuff->head == circBuff->capacity) {
-    circBuff->head = 0;
-  }
-  circBuff->full = circBuff->head == circBuff->tail;
-}
-
-static void retreatTail(CircularBuff circBuff) {
-  assert(circBuff);
-  circBuff->full = false;
-  if (++(circBuff->tail) == circBuff->capacity) {
-    circBuff->tail = 0;
-  }
-}
-
-int circularBuffHead(CircularBuff circBuff) {
-  int success = 0;
-  assert(circBuff && circBuff->buffer);
-  if(!circularBuffFull(circBuff)) {
-    advanceHead(circBuff);
-    success = 1;
-  }
-  return success;
-}
-
-int circularBuffTail(CircularBuff circBuff) {
-  int success = 0;
-  assert(circBuff && circBuff->buffer);
-  if(!circularBuffEmpty(circBuff)) {
-    retreatTail(circBuff);
-    success = 1;
-  }
-  return success;
-}
-
 int initSharedMemory(size_t circularBufferSize) {
 
-  size_t sharedMemSize = sizeof(struct sharedmem);
-  sharedMemSize +=  sizeof(sem_t) * circularBufferSize;
+  size_t sharedMemSize = sizeof(struct sharedmem) + sizeof(sem_t) * circularBufferSize;
 
   int id = shmget(IPC_PRIVATE, sharedMemSize, 0666);
   if (id == -1) perror("Creation of shared memory failed..\n");
-  else printf("share memory segment created with id %d\n", id);
-  SharedMem memory = (SharedMem) shmat(id, (void*)0, 0);
-  if (*(int*)memory == -1) printf("error in attachment\n");
-  else printf("attachment succesfull\n");
- 
-  circularBuffInit(&memory->buffer, circularBufferSize);
+
+  SharedMem memory = (SharedMem) shmat(id, NULL, 0);
+  if (*(int*)memory == -1){
+    perror("error in attachment\n");
+    shmctl(id, IPC_RMID, NULL);
+  }
+
+  for (size_t i = 0; i < circularBufferSize; ++i) {
+    sem_init(&memory->buffer[i], 1, 0);
+  }
+  memory->capacity = circularBufferSize;
+  memory->head = 0;
+  memory->tail = 0;
+  memory->full = false;
+  
+
   memory->NumOfWaters = 0;
   memory->NumOfCheeses = 0;
   memory->NumOfWines = 0;
@@ -150,20 +57,79 @@ int initSharedMemory(size_t circularBufferSize) {
   return id;
 }
 
-void destroySharedMemory(SharedMem mem, int shmid) {
-  circularBuffDestroy(&mem->buffer);
-  if (shmdt(mem) == -1) perror("shmdt");
-  if (shmctl(shmid, IPC_RMID, NULL) == -1) perror("shmctl");
+void destroySharedMem(SharedMem memory, int shmid) {
+  for(size_t i = 0; i < memory->capacity; ++i) {
+    sem_destroy(&memory->buffer[i]);
+  }
+  if(shmdt(memory) == -1) perror("shmdt failed\n");
+  if(shmctl(shmid, IPC_RMID, NULL) == -1) perror("shmctl failed\n");
 }
 
-size_t getSize(){
-  return sizeof(SharedMem);
+int circularBuffCapacity(SharedMem memory) {
+  assert(memory->buffer);
+  return memory->capacity;
 }
 
-int buffsize(SharedMem mem) {
-  return circularBuffSize(&mem->buffer);
+size_t circularBuffSize(SharedMem memory) {
+  assert(memory->buffer);
+  size_t size;
+  if(memory->head >= memory->tail) {
+    size = memory->head - memory->tail;
+  } else {
+    size = memory->capacity + memory->head - memory->tail;
+  }
+  if(memory->full) size = memory->capacity;
+  return size;
 }
 
-int buffCapacity(SharedMem mem) {
-  return circularBuffCapacity(&mem->buffer);
+
+bool circularBuffFull(SharedMem memory) {
+  assert(memory->buffer);
+  return memory->full;
+}
+
+bool circularBuffEmpty(SharedMem memory) {
+  assert(memory->buffer);
+  return (!memory->full &&(memory->tail == memory->head));
+}
+
+static void advanceHead(SharedMem memory) {
+  assert(memory->buffer);
+  if (memory->full) {
+    if(++memory->tail == memory->capacity) {
+      memory->tail = 0;
+    }
+  }
+  if (++memory->head == memory->capacity) {
+    memory->head = 0;
+  }
+  memory->full = memory->head == memory->tail;
+}
+
+static void retreatTail(SharedMem memory) {
+  assert(memory->buffer);
+  memory->full = false;
+  if (++(memory->tail) == memory->capacity) {
+    memory->tail = 0;
+  }
+}
+
+int circularBuffHead(SharedMem memory) {
+  int success = 0;
+  assert(memory && memory->buffer);
+  if(!circularBuffFull(memory)) {
+    advanceHead(memory);
+    success = 1;
+  }
+  return success;
+}
+
+int circularBuffTail(SharedMem memory) {
+  int success = 0;
+  assert(memory && memory->buffer);
+  if(!circularBuffEmpty(memory)) {
+    retreatTail(memory);
+    success = 1;
+  }
+  return success;
 }

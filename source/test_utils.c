@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 void test_init(void) {
-    CircularBuff cbuffer = circularBuffInit(10000);
+    SharedMem cbuffer = circularBuffInit(10000);
     TEST_ASSERT(cbuffer != NULL);
     TEST_ASSERT(circularBuffCapacity(cbuffer) == 10000);
     TEST_ASSERT(circularBuffSize(cbuffer) == 0);
@@ -13,7 +13,7 @@ void test_init(void) {
 }
 
 void test_insert_remove(void) {
-    CircularBuff cbuffer = circularBuffInit(100);
+    SharedMem cbuffer = circularBuffInit(100);
     TEST_ASSERT(cbuffer != NULL);
     for(int i = 0; i < 100; ++i) {
         TEST_ASSERT(circularBuffHead(cbuffer));
