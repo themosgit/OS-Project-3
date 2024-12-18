@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <sys/shm.h>
 #include <stdio.h>
-#include "utils.h"
+#include "../include/utils.h"
 
 int main(void) {
     int id = 0, err = 0;

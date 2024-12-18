@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../include/utils.h"
 #include <stdlib.h>
 #include <semaphore.h>
 #include <assert.h>
@@ -37,6 +37,8 @@ int initSharedMemory(size_t circularBufferSize) {
     shmctl(id, IPC_RMID, NULL);
   }
 
+  memory->buffer = (sem_t*)((char*)memory + sizeof(struct sharedmem));
+
   for (size_t i = 0; i < circularBufferSize; ++i) {
     sem_init(&memory->buffer[i], 1, 0);
   }
@@ -45,7 +47,6 @@ int initSharedMemory(size_t circularBufferSize) {
   memory->tail = 0;
   memory->full = false;
   
-
   memory->NumOfWaters = 0;
   memory->NumOfCheeses = 0;
   memory->NumOfWines = 0;
@@ -57,7 +58,8 @@ int initSharedMemory(size_t circularBufferSize) {
   return id;
 }
 
-void destroySharedMem(SharedMem memory, int shmid) {
+
+void destroySharedMemory(SharedMem memory, int shmid) {
   for(size_t i = 0; i < memory->capacity; ++i) {
     sem_destroy(&memory->buffer[i]);
   }
@@ -117,7 +119,7 @@ static void retreatTail(SharedMem memory) {
 int circularBuffHead(SharedMem memory) {
   int success = 0;
   assert(memory && memory->buffer);
-  if(!circularBuffFull(memory)) {
+  if(!memory->full) {
     advanceHead(memory);
     success = 1;
   }

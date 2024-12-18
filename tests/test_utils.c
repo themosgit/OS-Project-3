@@ -1,0 +1,62 @@
+#include "../include/utils.h"
+#include "../include/acutest.h"
+#include <sys/ipc.h>
+#include <sys/types.h>
+#include <sys/shm.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+void test_init(void) {
+    int shmid = initSharedMemory(1000);
+    SharedMem memory = (SharedMem) shmat(shmid, NULL, 0);
+    
+    TEST_ASSERT(memory != NULL);
+    TEST_ASSERT(circularBuffCapacity(memory) == 1000);
+    TEST_ASSERT(circularBuffSize(memory) == 0);
+    TEST_ASSERT(circularBuffEmpty(memory));
+
+    destroySharedMemory(memory, shmid);
+    TEST_ASSERT(shmdt((void*)memory));
+
+}
+void test_insert_remove(void) {
+    int shmid = initSharedMemory(100);
+    SharedMem memory = (SharedMem) shmat(shmid, NULL, 0);
+
+    TEST_ASSERT(memory != NULL);
+    TEST_ASSERT(circularBuffCapacity(memory) == 100);
+    for(int i = 0; i < 100; ++i) {
+        TEST_ASSERT(circularBuffHead(memory));
+        TEST_ASSERT(circularBuffSize(memory) == i + 1);
+    }
+
+    TEST_ASSERT(circularBuffFull(memory));
+    TEST_ASSERT(circularBuffHead(memory) == 0);
+    TEST_ASSERT(circularBuffSize(memory) == 100);
+    TEST_ASSERT(circularBuffFull(memory));
+
+    for (int i = 0; i < 10; ++i) {
+        TEST_ASSERT(circularBuffTail(memory));
+        TEST_ASSERT(circularBuffSize(memory) == 99);
+        TEST_ASSERT(!circularBuffFull(memory));
+        TEST_ASSERT(circularBuffHead(memory));
+        TEST_ASSERT(circularBuffSize(memory) == 100);
+        TEST_ASSERT(circularBuffFull(memory));
+    }
+
+    for (int i = 0; i < 100; ++i) {
+        TEST_ASSERT(circularBuffTail(memory));
+        TEST_ASSERT(circularBuffSize(memory) == 100 - i - 1);
+    }
+    TEST_ASSERT(circularBuffEmpty(memory));
+    
+    destroySharedMemory(memory, shmid);
+    TEST_ASSERT(shmdt((void*)memory));
+}
+
+TEST_LIST = {
+    {"Circular Buffer Intialiazation", test_init},
+    {"Circular Buffer Insert/Remove", test_insert_remove},
+    {NULL, NULL}
+};
+
