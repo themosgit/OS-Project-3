@@ -36,6 +36,8 @@ void test_insert_remove(void) {
             printf("i%d\n", i);
             TEST_ASSERT(circularBuffHead(memory));
             TEST_ASSERT(circularBuffSize(memory) == i + 1);
+            int  err = shmdt((void*) memory);
+            if (err == -1) perror("Detachment\n");
             exit(0);
         }
         //TEST_ASSERT(circularBuffSize(memory) == i + 1);
@@ -53,7 +55,9 @@ void test_insert_remove(void) {
             TEST_ASSERT(circularBuffTail(memory));
             TEST_ASSERT(circularBuffSize(memory) == 99);
             TEST_ASSERT(!circularBuffFull(memory));
-            return;
+            int  err = shmdt((void*) memory);
+            if (err == -1) perror("Detachment\n");
+            exit(1);
         }
         TEST_ASSERT(circularBuffHead(memory));
         TEST_ASSERT(circularBuffSize(memory) == 100);

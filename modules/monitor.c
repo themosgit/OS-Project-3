@@ -19,5 +19,7 @@ int main(int argc, char *argv[]) {
 
     printf("BUFF SIZE:%ld\n", circularBuffSize(data));
     printf("BUFF Capacity:%d\n", circularBuffCapacity(data));
+    int  err = shmdt((void*) data);
+    if (err == -1) perror("Detachment\n");
 
 }
