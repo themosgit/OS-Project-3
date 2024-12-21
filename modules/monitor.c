@@ -15,10 +15,12 @@ int main(int argc, char *argv[]) {
     shmctl(id, IPC_RMID, NULL);
   }
     assert(data);
-    printf("shared Mem attached\n");
-
+    printf("shared Mem attached\n Press q to stop\n");
+    do{
     printf("BUFF SIZE:%ld\n", circularBuffSize(data));
     printf("BUFF Capacity:%d\n", circularBuffCapacity(data));
+    }while(getchar() != 'q');
+    
     int  err = shmdt((void*) data);
     if (err == -1) perror("Detachment\n");
 
