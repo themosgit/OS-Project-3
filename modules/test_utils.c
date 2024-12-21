@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 void test_init(void) {
     int shmid = initSharedMemory(1000);
     SharedMem memory = (SharedMem) shmat(shmid, NULL, 0);
