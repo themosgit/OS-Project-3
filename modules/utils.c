@@ -15,6 +15,8 @@ struct sharedmem {
   size_t capacity;
   bool full;
 
+  sem_t tables[3][4];
+
   int NumOfWaters;
   int NumOfCheeses;
   int NumOfWines;
@@ -31,6 +33,7 @@ int initSharedMemory(size_t circularBufferSize) {
   int id = shmget(IPC_PRIVATE, sharedMemSize, 0666);
   if (id == -1) perror("Creation of shared memory failed..\n");
 
+  printf("\nSharedMem on: %d\n", id);
   SharedMem memory = (SharedMem) shmat(id, NULL, 0);
   if (*(int*)memory == -1){
     perror("error in attachment\n");
@@ -120,6 +123,7 @@ int circularBuffHead(SharedMem memory) {
   int success = 0;
   assert(memory && memory->buffer);
   if(!memory->full) {
+    sem_wait(&memory->buffer[memory->head]);
     advanceHead(memory);
     success = 1;
   }
@@ -130,6 +134,7 @@ int circularBuffTail(SharedMem memory) {
   int success = 0;
   assert(memory && memory->buffer);
   if(!circularBuffEmpty(memory)) {
+    sem_post(&memory->buffer[memory->head]);
     retreatTail(memory);
     success = 1;
   }
