@@ -123,8 +123,8 @@ int circularBuffHead(SharedMem memory) {
   int success = 0;
   assert(memory && memory->buffer);
   if(!memory->full) {
-    sem_wait(&memory->buffer[memory->head]);
     advanceHead(memory);
+    sem_wait(&memory->buffer[memory->head - 1]);
     success = 1;
   }
   return success;
