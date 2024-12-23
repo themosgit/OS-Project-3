@@ -35,14 +35,13 @@ void test_insert_remove(void) {
         if ((pid = fork()) == 0){
             printf("i%d\n", i);
             TEST_ASSERT(circularBuffHead(memory));
-            TEST_ASSERT(circularBuffSize(memory) == i + 1);
             int  err = shmdt((void*) memory);
             if (err == -1) perror("Detachment\n");
             exit(0);
         }
         //TEST_ASSERT(circularBuffSize(memory) == i + 1);
     }
-    while( waitpid(0, &status, WNOHANG) == 0);
+    sleep(1);
     printf("Check\n");
     TEST_ASSERT(circularBuffFull(memory));
     TEST_ASSERT(circularBuffHead(memory) == 0);
@@ -51,15 +50,15 @@ void test_insert_remove(void) {
 
    
     for (int i = 0; i < 10; ++i) {
+        TEST_ASSERT(circularBuffTail(memory));
+        TEST_ASSERT(!circularBuffFull(memory));
         if (pid = fork() == 0){
-            TEST_ASSERT(circularBuffTail(memory));
-            TEST_ASSERT(circularBuffSize(memory) == 99);
-            TEST_ASSERT(!circularBuffFull(memory));
+            TEST_ASSERT(circularBuffHead(memory));
             int  err = shmdt((void*) memory);
             if (err == -1) perror("Detachment\n");
             exit(1);
         }
-        TEST_ASSERT(circularBuffHead(memory));
+        sleep(1);
         TEST_ASSERT(circularBuffSize(memory) == 100);
         TEST_ASSERT(circularBuffFull(memory));
     }

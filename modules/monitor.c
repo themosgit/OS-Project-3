@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/shm.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -19,6 +20,7 @@ int main(int argc, char *argv[]) {
     do{
     printf("BUFF SIZE:%ld\n", circularBuffSize(data));
     printf("BUFF Capacity:%d\n", circularBuffCapacity(data));
+    printf("Buffer full flag is %d \n", circularBuffFull(data));
     }while(getchar() != 'q');
     
     int  err = shmdt((void*) data);
