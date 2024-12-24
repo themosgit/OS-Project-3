@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/shm.h>
 #include <stdio.h>
+#include <pthread.h>
 
 struct sharedmem {
 
@@ -14,6 +15,7 @@ struct sharedmem {
   size_t tail;
   size_t capacity;
   bool full;
+  sem_t mutex;
 
   sem_t tables[3][4];
 
@@ -49,7 +51,8 @@ int initSharedMemory(size_t circularBufferSize) {
   memory->head = 0;
   memory->tail = 0;
   memory->full = false;
-  
+  sem_init(&memory->mutex, 1, 1);
+
   memory->NumOfWaters = 0;
   memory->NumOfCheeses = 0;
   memory->NumOfWines = 0;
@@ -66,6 +69,7 @@ void destroySharedMemory(SharedMem memory, int shmid) {
   for(size_t i = 0; i < memory->capacity; ++i) {
     sem_destroy(&memory->buffer[i]);
   }
+  sem_destroy(&memory->mutex);
   if(shmdt(memory) == -1) perror("shmdt failed\n");
   if(shmctl(shmid, IPC_RMID, NULL) == -1) perror("shmctl failed\n");
 }
@@ -100,6 +104,7 @@ bool circularBuffEmpty(SharedMem memory) {
 
 static void advanceHead(SharedMem memory) {
   assert(memory->buffer);
+  sem_wait(&memory->mutex);
   if (memory->full) {
     if(++memory->tail == memory->capacity) {
       memory->tail = 0;
@@ -109,14 +114,17 @@ static void advanceHead(SharedMem memory) {
     memory->head = 0;
   }
   memory->full = memory->head == memory->tail;
+  sem_post(&memory->mutex);
 }
 
 static void retreatTail(SharedMem memory) {
   assert(memory->buffer);
+  sem_wait(&memory->mutex);
   memory->full = false;
   if (++(memory->tail) == memory->capacity) {
     memory->tail = 0;
   }
+  sem_post(&memory->mutex);
 }
 
 int circularBuffHead(SharedMem memory) {
@@ -134,8 +142,9 @@ int circularBuffTail(SharedMem memory) {
   int success = 0;
   assert(memory && memory->buffer);
   if(!circularBuffEmpty(memory)) {
-    sem_post(&memory->buffer[memory->head]);
     retreatTail(memory);
+    sem_post(&memory->buffer[memory->head]);
+    
     success = 1;
   }
   return success;
