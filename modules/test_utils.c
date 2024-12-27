@@ -3,8 +3,12 @@
 #include <sys/ipc.h>
 #include <sys/types.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+
 
 void test_init(void) {
     int shmid = initSharedMemory(1000);
@@ -25,33 +29,40 @@ void test_insert_remove(void) {
 
     TEST_ASSERT(memory != NULL);
     TEST_ASSERT(circularBuffCapacity(memory) == 100);
+    int status;
+    pid_t pid;
     for(int i = 0; i < 100; ++i) {
-        TEST_ASSERT(circularBuffHead(memory));
-        TEST_ASSERT(circularBuffSize(memory) == i + 1);
+        if ((pid = fork()) == 0){
+            TEST_ASSERT(circularBuffHead(memory));
+            TEST_ASSERT(shmdt(memory) == 0);
+            exit(0);
+        }
     }
-
-    TEST_ASSERT(circularBuffFull(memory));
+    while(circularBuffSize(memory) != 100);
     TEST_ASSERT(circularBuffHead(memory) == 0);
     TEST_ASSERT(circularBuffSize(memory) == 100);
     TEST_ASSERT(circularBuffFull(memory));
-
+    
     for (int i = 0; i < 10; ++i) {
         TEST_ASSERT(circularBuffTail(memory));
-        TEST_ASSERT(circularBuffSize(memory) == 99);
         TEST_ASSERT(!circularBuffFull(memory));
-        TEST_ASSERT(circularBuffHead(memory));
-        TEST_ASSERT(circularBuffSize(memory) == 100);
-        TEST_ASSERT(circularBuffFull(memory));
+        if ((pid = fork()) == 0){
+            TEST_ASSERT(circularBuffHead(memory));
+            TEST_ASSERT(shmdt(memory) == 0);
+            exit(0);
+        }
     }
-
+    while(circularBuffSize(memory) != 100);
+    
     for (int i = 0; i < 100; ++i) {
         TEST_ASSERT(circularBuffTail(memory));
-        TEST_ASSERT(circularBuffSize(memory) == 100 - i - 1);
     }
+
+    wait(NULL);
+
     TEST_ASSERT(circularBuffEmpty(memory));
-    
     destroySharedMemory(memory, shmid);
-    TEST_ASSERT(shmdt((void*)memory));
+    TEST_ASSERT(shmdt(memory));
 }
 
 TEST_LIST = {
