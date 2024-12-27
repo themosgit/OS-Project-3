@@ -7,6 +7,7 @@
 #include <sys/shm.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <errno.h>
 
 struct sharedmem {
 
@@ -99,12 +100,11 @@ bool circularBuffFull(SharedMem memory) {
 
 bool circularBuffEmpty(SharedMem memory) {
   assert(memory->buffer);
-  return (!memory->full &&(memory->tail == memory->head));
+  return (!memory->full && (memory->tail == memory->head));
 }
 
 static void advanceHead(SharedMem memory) {
   assert(memory->buffer);
-  sem_wait(&memory->mutex);
   if (memory->full) {
     if(++memory->tail == memory->capacity) {
       memory->tail = 0;
@@ -114,38 +114,52 @@ static void advanceHead(SharedMem memory) {
     memory->head = 0;
   }
   memory->full = memory->head == memory->tail;
-  sem_post(&memory->mutex);
 }
 
 static void retreatTail(SharedMem memory) {
   assert(memory->buffer);
-  sem_wait(&memory->mutex);
   memory->full = false;
   if (++(memory->tail) == memory->capacity) {
     memory->tail = 0;
   }
-  sem_post(&memory->mutex);
 }
 
 int circularBuffHead(SharedMem memory) {
-  int success = 0;
+  int pos, success = 0;
   assert(memory && memory->buffer);
   if(!memory->full) {
+    sem_wait(&memory->mutex);
     advanceHead(memory);
-    sem_wait(&memory->buffer[memory->head - 1]);
+    pos = memory->head - 1;
+    sem_post(&memory->mutex);
+    sem_wait(&memory->buffer[pos]);
     success = 1;
   }
   return success;
 }
 
 int circularBuffTail(SharedMem memory) {
-  int success = 0;
   assert(memory && memory->buffer);
+  int success = 0;
   if(!circularBuffEmpty(memory)) {
+    sem_wait(&memory->mutex);
+    sem_post(&memory->buffer[memory->tail]);
     retreatTail(memory);
-    sem_post(&memory->buffer[memory->head]);
-    
+    sem_post(&memory->mutex);
     success = 1;
   }
   return success;
+}
+
+
+int circularBuffMutexVal(SharedMem memory) {
+  return sem_trywait(&memory->mutex);
+}
+
+int circularBuffHeadVal(SharedMem memory) {
+  return memory->head;
+}
+
+int circularBuffTailVal(SharedMem memory) {
+  return memory->tail;
 }

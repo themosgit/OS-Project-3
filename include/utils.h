@@ -26,3 +26,9 @@ static void retreatTail(SharedMem memory);
 int circularBuffHead(SharedMem memory);
 
 int circularBuffTail(SharedMem memory);
+
+int circularBuffMutexVal(SharedMem memory);
+
+int circularBuffHeadVal(SharedMem memory);
+
+int circularBuffTailVal(SharedMem memory);

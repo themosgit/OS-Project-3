@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 
 void test_init(void) {
@@ -33,35 +34,35 @@ void test_insert_remove(void) {
     for(int i = 0; i < 100; ++i) {
         if ((pid = fork()) == 0){
             TEST_ASSERT(circularBuffHead(memory));
-            int  err = shmdt((void*) memory);
-            if (err == -1) perror("Detachment\n");
+            TEST_ASSERT(shmdt(memory) == 0);
             exit(0);
         }
     }
-    sleep(1);
+    while(circularBuffSize(memory) != 100);
     TEST_ASSERT(circularBuffHead(memory) == 0);
     TEST_ASSERT(circularBuffSize(memory) == 100);
     TEST_ASSERT(circularBuffFull(memory));
-
+    
     for (int i = 0; i < 10; ++i) {
         TEST_ASSERT(circularBuffTail(memory));
         TEST_ASSERT(!circularBuffFull(memory));
         if ((pid = fork()) == 0){
             TEST_ASSERT(circularBuffHead(memory));
-            int  err = shmdt((void*) memory);
-            if (err == -1) perror("Detachment\n");
-            exit(1);
+            TEST_ASSERT(shmdt(memory) == 0);
+            exit(0);
         }
     }
-    sleep(1);
-
+    while(circularBuffSize(memory) != 100);
+    
     for (int i = 0; i < 100; ++i) {
         TEST_ASSERT(circularBuffTail(memory));
     }
+
     wait(NULL);
+
     TEST_ASSERT(circularBuffEmpty(memory));
     destroySharedMemory(memory, shmid);
-    TEST_ASSERT(shmdt((void*)memory));
+    TEST_ASSERT(shmdt(memory));
 }
 
 TEST_LIST = {

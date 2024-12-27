@@ -21,6 +21,10 @@ int main(int argc, char *argv[]) {
     printf("BUFF SIZE:%ld\n", circularBuffSize(data));
     printf("BUFF Capacity:%d\n", circularBuffCapacity(data));
     printf("Buffer full flag is %d \n", circularBuffFull(data));
+    printf("buffer empty flag is : %d\n", circularBuffEmpty(data));
+    printf("buffer mutex is: %d\n", circularBuffMutexVal(data));
+    printf("buffer head is:%d tail is:%d\n", circularBuffHeadVal(data), circularBuffTailVal(data));
+
     }while(getchar() != 'q');
     
     int  err = shmdt((void*) data);
