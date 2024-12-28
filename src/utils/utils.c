@@ -10,7 +10,6 @@
 #include <errno.h>
 
 struct sharedmem {
-
   sem_t *buffer;
   size_t head;
   size_t tail;
@@ -150,6 +149,7 @@ int circularBuffTail(SharedMem memory) {
   }
   return success;
 }
+
 
 
 int circularBuffMutexVal(SharedMem memory) {

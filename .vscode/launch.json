@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/users/sdi2100227/OS-Project-3/modules",
-      "program": "/home/users/sdi2100227/OS-Project-3/modules/build/Debug/outDebug",
+      "cwd": "/home/users/sdi2100227/OS-Project-3/src/modules",
+      "program": "/home/users/sdi2100227/OS-Project-3/src/modules/build/Debug/outDebug",
       "MIMode": "lldb",
       "miDebuggerPath": "lldb",
       "setupCommands": [

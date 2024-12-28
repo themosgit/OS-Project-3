@@ -38,6 +38,7 @@ void test_insert_remove(void) {
             exit(0);
         }
     }
+    
     while(circularBuffSize(memory) != 100);
     TEST_ASSERT(circularBuffHead(memory) == 0);
     TEST_ASSERT(circularBuffSize(memory) == 100);
