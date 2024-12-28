@@ -16,6 +16,7 @@ OBJS_VISITOR := $(SRCS_VISITOR:%=$(BUILD_DIR)/%.o)
 OBJS_MONITOR := $(SRCS_MONITOR:%=$(BUILD_DIR)/%.o)
 OBJS_TEST := $(SRCS_TEST:%=$(BUILD_DIR)/%.o)
 
+
 # Dependencies
 DEPS := $(OBJS_DRIVER:.o=.d) $(OBJS_RECEPTIONIST:.o=.d) $(OBJS_VISITOR:.o=.d) $(OBJS_MONITOR:.o=.d) $(OBJS_TEST:.o=.d)
 
