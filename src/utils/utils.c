@@ -1,13 +1,10 @@
 #include "../include/utils.h"
 #include <stdlib.h>
 #include <semaphore.h>
-#include <assert.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
-#include <sys/shm.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <errno.h>
+#include <unistd.h>
 
 struct sharedmem {
   sem_t *buffer;
@@ -17,7 +14,10 @@ struct sharedmem {
   bool full;
   sem_t mutex;
 
-  sem_t tables[3][4];
+  bool stop;
+  int seats[12];
+  sem_t seatMutex;
+  sem_t findSeat;
 
   int NumOfWaters;
   int NumOfCheeses;
@@ -53,6 +53,13 @@ int initSharedMemory(size_t circularBufferSize) {
   memory->full = false;
   sem_init(&memory->mutex, 1, 1);
 
+  sem_init(&memory->seatMutex, 1, 1);
+  sem_init(&memory->findSeat, 1, 0);
+  memory->stop = false;
+  for (size_t i = 0; i < 12; i++) {
+    memory->seats[i] = 0;
+  }
+
   memory->NumOfWaters = 0;
   memory->NumOfCheeses = 0;
   memory->NumOfWines = 0;
@@ -70,6 +77,9 @@ void destroySharedMemory(SharedMem memory, int shmid) {
     sem_destroy(&memory->buffer[i]);
   }
   sem_destroy(&memory->mutex);
+  sem_destroy(&memory->seatMutex);
+  sem_destroy(&memory->findSeat);
+
   if(shmdt(memory) == -1) perror("shmdt failed\n");
   if(shmctl(shmid, IPC_RMID, NULL) == -1) perror("shmctl failed\n");
 }
@@ -152,6 +162,55 @@ int circularBuffTail(SharedMem memory) {
 }
 
 
+bool isBarClosed(SharedMem memory) {
+  return memory->stop;
+}
+
+bool seatAvailable(SharedMem memory) { 
+  for (size_t i = 0; i < 12; i++) {
+    if(memory->seats[i] == 0) return true;
+  }
+  return false;
+}
+
+void waitForVisitor(SharedMem memory) {
+  sem_wait(&memory->findSeat);
+}
+
+int findSeatIndex(SharedMem memory) {
+  sem_wait(&memory->seatMutex);
+  for (size_t i = 0; i < 12; i++) {
+    if(memory->seats[i] == 0) {
+      memory->seats[i] = getpid();
+      sem_post(&memory->seatMutex);
+      sem_post(&memory->findSeat);
+      return i;
+    }
+  }
+  return -1;
+}
+
+void markSeatDirty(SharedMem memory, int index) {
+  sem_wait(&memory->seatMutex);
+  memory->seats[index] = -1;
+  sem_post(&memory->seatMutex);
+}
+
+void clearTables(SharedMem memory) {
+  sem_wait(&memory->seatMutex);
+  int j = 0;
+  while(j < 12){
+    if (memory->seats[j] == memory->seats[j+1] &&
+        memory->seats[j+1] == memory->seats[j+2] &&
+        memory->seats[j+2] == memory->seats[j+3]) {
+          memory->seats[j] = 0;
+          memory->seats[j+1] = 0;
+          memory->seats[j+2] = 0;
+          memory->seats[j+3] = 0;
+    }
+    j += 4;      
+  }
+}
 
 int circularBuffMutexVal(SharedMem memory) {
   return sem_trywait(&memory->mutex);

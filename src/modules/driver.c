@@ -1,8 +1,5 @@
-#include <sys/ipc.h>
-#include <sys/types.h>
-#include <sys/shm.h>
-#include <stdio.h>
 #include "../include/utils.h"
+#include <stdio.h>
 
 int main(void) {
     int id = 0, err = 0;

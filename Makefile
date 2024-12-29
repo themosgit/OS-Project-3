@@ -22,7 +22,7 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 CPPFLAGS := $(INC_FLAGS) -MMD -MP
 LDFLAGS := -lrt -lpthread -Wall -Werror
 
-all: $(BUILD_DIR)/driver $(BUILD_DIR)/monitor $(BUILD_DIR)/test
+all: $(BUILD_DIR)/driver $(BUILD_DIR)/receptionist $(BUILD_DIR)/visitor $(BUILD_DIR)/monitor $(BUILD_DIR)/test
 
 
 $(BUILD_DIR)/driver: $(OBJS_DRIVER)
