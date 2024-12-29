@@ -24,14 +24,15 @@ void test_init(void) {
 
 }
 void test_insert_remove(void) {
-    int shmid = initSharedMemory(100);
+    int buff_size = 10000;
+    int shmid = initSharedMemory(buff_size);
     SharedMem memory = (SharedMem) shmat(shmid, NULL, 0);
 
     TEST_ASSERT(memory != NULL);
-    TEST_ASSERT(circularBuffCapacity(memory) == 100);
+    TEST_ASSERT(circularBuffCapacity(memory) == buff_size);
     int status;
     pid_t pid;
-    for(int i = 0; i < 100; ++i) {
+    for(int i = 0; i < buff_size; ++i) {
         if ((pid = fork()) == 0){
             TEST_ASSERT(circularBuffHead(memory));
             TEST_ASSERT(shmdt(memory) == 0);
@@ -39,9 +40,9 @@ void test_insert_remove(void) {
         }
     }
     
-    while(circularBuffSize(memory) != 100);
+    while(circularBuffSize(memory) != buff_size);
     TEST_ASSERT(circularBuffHead(memory) == 0);
-    TEST_ASSERT(circularBuffSize(memory) == 100);
+    TEST_ASSERT(circularBuffSize(memory) == buff_size);
     TEST_ASSERT(circularBuffFull(memory));
     
     for (int i = 0; i < 10; ++i) {
@@ -53,9 +54,9 @@ void test_insert_remove(void) {
             exit(0);
         }
     }
-    while(circularBuffSize(memory) != 100);
+    while(circularBuffSize(memory) != buff_size);
     
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < buff_size; ++i) {
         TEST_ASSERT(circularBuffTail(memory));
     }
 

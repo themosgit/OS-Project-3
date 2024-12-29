@@ -130,6 +130,7 @@ int circularBuffHead(SharedMem memory) {
     sem_wait(&memory->mutex);
     advanceHead(memory);
     pos = memory->head - 1;
+    if(pos == -1) pos = memory->capacity - 1;
     sem_post(&memory->mutex);
     sem_wait(&memory->buffer[pos]);
     success = 1;
