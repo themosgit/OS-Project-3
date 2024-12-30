@@ -8,7 +8,7 @@
 
 typedef struct sharedmem* SharedMem;
 
-int initSharedMemory(size_t circularBufferSize);
+int initSharedMemory();
 
 void destroySharedMemory(SharedMem mem, int shmid);
 
@@ -30,7 +30,7 @@ int circularBuffTail(SharedMem memory);
 
 
 
-bool isBarClosed(SharedMem memory);
+bool BarClosed(SharedMem memory);
 
 bool seatAvailable(SharedMem memory);
 
@@ -41,6 +41,18 @@ int findSeatIndex(SharedMem memory);
 void markSeatDirty(SharedMem memory, int index);
 
 void clearTables(SharedMem memory);
+
+void updateSharedMemStats(SharedMem memory, int drink, int food, int visitDuration, int waitTime);
+
+void printStats(SharedMem memory);
+
+void tableState(SharedMem memory);
+
+bool BarEmpty(SharedMem memory);
+
+void waitForReceptionist(SharedMem memory);
+
+void receptionistDone(SharedMem memory);
 
 int circularBuffMutexVal(SharedMem memory);
 

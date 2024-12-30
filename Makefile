@@ -29,10 +29,10 @@ $(BUILD_DIR)/driver: $(OBJS_DRIVER)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/receptionist: $(OBJS_RECEPTIONIST)
-	$(CC) $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS) -lm
 
 $(BUILD_DIR)/visitor: $(OBJS_VISITOR)
-	$(CC) $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS) -lm
 
 $(BUILD_DIR)/monitor: $(OBJS_MONITOR)
 	$(CC) $^ -o $@ $(LDFLAGS)
