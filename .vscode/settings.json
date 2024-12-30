@@ -58,6 +58,7 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
     "utils.h": "c",
-    "semaphore.h": "c"
+    "semaphore.h": "c",
+    "unistd.h": "c"
   }
 }

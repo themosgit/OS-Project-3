@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <errno.h>
 
+/*test_utils.c runs basic tests on the circular buffer 
+* and proceeds to run a 30 second simulation of the bar
+* on the path to nemea synchronization problem
+*/
 
 void test_init(void) {
     int shmid = initSharedMemory();
