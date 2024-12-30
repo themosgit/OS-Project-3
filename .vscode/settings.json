@@ -57,6 +57,7 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
-    "utils.h": "c"
+    "utils.h": "c",
+    "semaphore.h": "c"
   }
 }

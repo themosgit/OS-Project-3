@@ -28,12 +28,14 @@ int main(int argc, char *argv[]) {
     SharedMemory = (SharedMem) shmat(shmid, (void*) 0, 0);
     assert(*(int*)SharedMemory != -1);
     assert(SharedMemory);
+    Receptionistlog_init(SharedMemory);
     int randOrderTime, minOrderTime = ceil(0.5*orderTime);
     srand(time(NULL));
 
     while(!BarClosed(SharedMemory) || !BarEmpty(SharedMemory)) {
         if (!circularBuffEmpty(SharedMemory) && seatAvailable(SharedMemory) && !BarClosed(SharedMemory)) {
             circularBuffTail(SharedMemory);
+            waitForVisitor(SharedMemory);
             randOrderTime = rand() % (orderTime - minOrderTime + 1)  + minOrderTime;
             sleep(randOrderTime);
         } else {
@@ -47,6 +49,7 @@ int main(int argc, char *argv[]) {
     
     printStats(SharedMemory);
     receptionistDone(SharedMemory);
+    Receptionistlog_close(SharedMemory);
     
     assert(shmdt((void*) SharedMemory) != -1);
     

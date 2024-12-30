@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "log.h"
 
 typedef struct sharedmem* SharedMem;
 
@@ -59,3 +60,9 @@ int circularBuffMutexVal(SharedMem memory);
 int circularBuffHeadVal(SharedMem memory);
 
 int circularBuffTailVal(SharedMem memory);
+
+void log_init(SharedMem memory);
+
+void Receptionistlog_init(SharedMem memory);
+
+void Receptionistlog_close(SharedMem memory);

@@ -29,9 +29,13 @@ struct sharedmem {
   int WaitingTime;
 
   sem_t done;
+
+  FILE* Driverlog;
+  FILE* Receptionistlog;
 };
 
 int initSharedMemory() {
+
   size_t circularBufferSize = 100;
   size_t sharedMemSize = sizeof(struct sharedmem);
   int id = shmget(IPC_PRIVATE, sharedMemSize, 0666);
@@ -71,6 +75,11 @@ int initSharedMemory() {
   for (size_t i = 0; i < circularBufferSize; ++i) {
     sem_init(&memory->buffer[i], 1, 0);
   }
+  log_set_quiet(true);
+  memory->Driverlog = fopen("Driverlog.txt", "w");
+  log_add_fp(memory->Driverlog, 1);
+
+  log_info("Shared merory segment created");
 
   return id;
 }
@@ -85,6 +94,10 @@ void destroySharedMemory(SharedMem memory, int shmid) {
   sem_destroy(&memory->findSeat);
   sem_destroy(&memory->seatMutex);
   sem_destroy(&memory->done);
+  log_info("Semaphores destroyed closing log...");
+
+  fclose(memory->Driverlog);
+  
 
   if(shmdt(memory) == -1) perror("shmdt failed\n");
   if(shmctl(shmid, IPC_RMID, NULL) == -1) perror("shmctl failed\n");
@@ -147,6 +160,7 @@ int circularBuffHead(SharedMem memory) {
     advanceHead(memory);
     pos = memory->head - 1;
     if(pos == -1) pos = memory->capacity - 1;
+    log_info("Adding process on queue position: %d", pos);
     sem_post(&memory->mutex);
     sem_wait(&memory->buffer[pos]);
     success = 1;
@@ -159,6 +173,7 @@ int circularBuffTail(SharedMem memory) {
   int success = 0;
   if(!circularBuffEmpty(memory)) {
     sem_wait(&memory->mutex);
+    log_info("Removing process from queue position: %d", memory->tail);
     sem_post(&memory->buffer[memory->tail]);
     retreatTail(memory);
     sem_post(&memory->mutex);
@@ -180,6 +195,7 @@ bool seatAvailable(SharedMem memory) {
 }
 
 void waitForVisitor(SharedMem memory) {
+  log_info("waiting for seat assignement");
   sem_wait(&memory->findSeat);
 }
 
@@ -188,7 +204,9 @@ int findSeatIndex(SharedMem memory) {
   for (size_t i = 0; i < 12; i++) {
     if(memory->seats[i] == 0) {
       memory->seats[i] = getpid();
+      log_info("Seat found at %d", i);
       sem_post(&memory->seatMutex);
+      sem_post(&memory->findSeat);
       return i;
     }
   }
@@ -197,6 +215,7 @@ int findSeatIndex(SharedMem memory) {
 
 void markSeatDirty(SharedMem memory, int index) {
   sem_wait(&memory->seatMutex);
+  log_info("Marking seat %d as dirty", index);
   memory->seats[index] = -1;
   sem_post(&memory->seatMutex);
 }
@@ -207,7 +226,9 @@ void clearTables(SharedMem memory) {
   while(j < 12){
     if (memory->seats[j] == memory->seats[j+1] &&
         memory->seats[j+1] == memory->seats[j+2] &&
-        memory->seats[j+2] == memory->seats[j+3]) {
+        memory->seats[j+2] == memory->seats[j+3] &&
+        memory->seats[j] == -1) {
+          log_info("Table %d cleaned", j);
           memory->seats[j] = 0;
           memory->seats[j+1] = 0;
           memory->seats[j+2] = 0;
@@ -218,6 +239,7 @@ void clearTables(SharedMem memory) {
   if (BarClosed(memory)) {
     for (size_t i = 0; i < 12; i++) {
       if (memory->seats[i] == -1) {
+        log_info("Bar is closed cleaning seat %d", i);
         memory->seats[i] = 0;
       }
     }
@@ -251,15 +273,18 @@ void updateSharedMemStats(SharedMem memory, int drink, int food, int visitDurati
   case 1:
     memory->NumOfSalads++;
     break;
+  default:
+    break;
   }
+  log_info("visitor updated stats and leaving");
   sem_post(&memory->statsMutex);
 }
 
 void printStats(SharedMem memory) {
   sem_wait(&memory->statsMutex);
   printf("Number of visitors: %d\n", memory->NumberOfVisitors);
-  printf("Total wait time: %d\n", memory->WaitingTime);
-  printf("Total visit duration: %d\n", memory->VisitDuration);
+  printf("Total wait time: %d Avarage: %d\n", memory->WaitingTime, memory->WaitingTime / memory->NumberOfVisitors);
+  printf("Total visit duration: %d Avarage: %d\n", memory->VisitDuration, memory->VisitDuration / memory->NumberOfVisitors);
   printf("Number of waters consumed: %d\n", memory->NumOfWaters);
   printf("Number of wines consumed: %d\n", memory->NumOfWines);
   printf("Number of cheese platters consumed: %d\n", memory->NumOfCheeses);
@@ -287,10 +312,12 @@ bool BarEmpty(SharedMem memory){
 
 void waitForReceptionist(SharedMem memory) {
   memory->stop = true;
+  log_info("Stop flag sent waiting for receptionist to complete");
   sem_wait(&memory->done);
 } 
 
 void receptionistDone(SharedMem memory) {
+  log_info("Receptionist done ending execution");
   sem_post(&memory->done);
 }
 
@@ -304,4 +331,17 @@ int circularBuffHeadVal(SharedMem memory) {
 
 int circularBuffTailVal(SharedMem memory) {
   return memory->tail;
+}
+
+void Receptionistlog_init(SharedMem memory) {
+  log_set_quiet(true);
+  memory->Receptionistlog = fopen("Receptionistlog.txt", "w");
+  log_add_fp(memory->Receptionistlog, 1);
+  log_info("Receptionisist log started");
+}
+
+
+void Receptionistlog_close(SharedMem memory) {
+  log_info("Closing receptionist log");
+  fclose(memory->Receptionistlog);
 }

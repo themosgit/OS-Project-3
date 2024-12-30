@@ -24,11 +24,12 @@ int main(int argc, char *argv[]) {
             printf("error in command syntax...\n");
             return 0;
     }
-
+    log_set_quiet(true);
     SharedMem SharedMemory;
     SharedMemory = (SharedMem) shmat(shmid, (void*) 0, 0);
     assert(*(int*)SharedMemory != -1);
     assert(SharedMemory);
+
     time_t start = time(NULL);
    
     circularBuffHead(SharedMemory);
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]) {
     
     srand(time(NULL));
     int drink = rand() % 3;
-    int food = rand() % 2;
+    int food = rand() % 3;
 
     int randRestTime, minRestTime = ceil(0.7*restTime);
     randRestTime = rand() % (restTime - minRestTime + 1) + minRestTime;
@@ -54,7 +55,7 @@ int main(int argc, char *argv[]) {
     markSeatDirty(SharedMemory, seatNum);
 
     updateSharedMemStats(SharedMemory, drink, food, randRestTime, waitTime);
-
+    
     assert(shmdt((void*) SharedMemory) != -1);
     return 0; 
 }
