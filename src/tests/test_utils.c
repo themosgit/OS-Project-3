@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <errno.h>
 
+/*test_utils.c runs basic tests on the circular buffer 
+* and proceeds to run a 30 second simulation of the bar
+* on the path to nemea synchronization problem
+*/
 
 void test_init(void) {
     int shmid = initSharedMemory();
@@ -75,7 +79,7 @@ void test_path_to_nemea(void) {
     sprintf(argtime, "%d",1);
 
     char *args[] = {"mparoufes","-s", argid, "-d", argtime, NULL};
-
+    printf("Simulation will take 30 seconds to complete please wait\n");
     pid_t pid;
     if((pid = fork()) == 0) {
         execvp("receptionist", args);

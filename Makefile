@@ -1,11 +1,11 @@
 BUILD_DIR := ./build
 SRC_DIRS := ./src
 
-SRCS_DRIVER := ./src/modules/driver.c ./src/utils/utils.c
-SRCS_RECEPTIONIST := ./src/modules/receptionist.c ./src/utils/utils.c
-SRCS_VISITOR := ./src/modules/visitor.c ./src/utils/utils.c
-SRCS_MONITOR := ./src/utils/monitor.c ./src/utils/utils.c
-SRCS_TEST := ./src/tests/test_utils.c ./src/utils/utils.c
+SRCS_DRIVER := ./src/modules/driver.c ./src/utils/utils.c ./src/utils/log.c
+SRCS_RECEPTIONIST := ./src/modules/receptionist.c ./src/utils/utils.c ./src/utils/log.c
+SRCS_VISITOR := ./src/modules/visitor.c ./src/utils/utils.c ./src/utils/log.c
+SRCS_MONITOR := ./src/utils/monitor.c ./src/utils/utils.c ./src/utils/log.c
+SRCS_TEST := ./src/tests/test_utils.c ./src/utils/utils.c ./src/utils/log.c
 
 
 OBJS_DRIVER := $(SRCS_DRIVER:%=$(BUILD_DIR)/%.o)
