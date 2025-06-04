@@ -10,7 +10,6 @@
 * and proceeds to run a 30 second simulation of the bar
 * on the path to nemea synchronization problem
 */
-
 void test_init(void) {
     int shmid = initSharedMemory();
     SharedMem memory = (SharedMem) shmat(shmid, NULL, 0);
